@@ -1,0 +1,142 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Resizable Image Insertion on Click</title>
+    <style>
+        #canvas {
+            position: absolute;
+            top: 0;
+            left: 0;
+        }
+
+        button {
+            background-color: green;
+            color: white;
+            padding: 10px 20px;
+            border: none;
+            cursor: pointer;
+            height: 100px;
+            width: 200px;
+            justify-content: center;
+        }
+    </style>
+</head>
+<body>
+    <div id="box1">
+        <video id="camera" width="800" height="600" autoplay style="opacity: 0.3;"></video>
+        <canvas id="canvas" width="800" height="600"></canvas>
+    </div>
+    <button id="insertImageButton" style="height: 50; width: 100;">Insert Image</button>
+    <button id="nextButton">Next</button>
+    <div id="watch-container">
+        <img id="watch-image" src="" alt="Watch on Wrist" style="display: none;">
+        <input type="checkbox" id="like-checkbox" style="display: none;"> Like
+    </div>
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            const video = document.getElementById('camera');
+            const canvas = document.getElementById('canvas');
+            const ctx = canvas.getContext('2d');
+
+            let imageInserted = false; // Flag to track whether the image has been inserted
+            let currentImageIndex = 0; // Index to track the current image
+
+            // Define clickable region boundaries (circle)
+            const clickableRegion = {
+                x: canvas.width / 2,
+                y: canvas.height / 2,
+                diameter: Math.min(canvas.width / 3, canvas.height / 3)
+            };
+
+            const imageSources = ['images/watch.png', 'images/watch2.png', 'images/watch3.png', 'images/watch-18713 (1).png']; // Add more image sources as needed
+
+            // Check for camera support
+            if (navigator.mediaDevices && navigator.mediaDevices.getUserMedia) {
+                navigator.mediaDevices.getUserMedia({ video: true })
+                    .then((stream) => {
+                        video.srcObject = stream;
+                    })
+                    .catch((error) => {
+                        console.error('Error accessing camera:', error);
+                    });
+            }
+
+            // Draw the clickable circle on the canvas
+            function drawClickableCircle() {
+                ctx.beginPath();
+                ctx.arc(clickableRegion.x, clickableRegion.y, clickableRegion.diameter / 2, 0, 2 * Math.PI);
+                ctx.strokeStyle = 'black';
+                ctx.lineWidth = 2;
+                ctx.stroke();
+            }
+
+            drawClickableCircle(); // Initial draw
+
+            // Handle click events on the "Insert Image" button
+            document.getElementById('insertImageButton').addEventListener('click', () => {
+                if (!imageInserted) {
+                    // Create an image element
+                    const image = new Image();
+                    image.src = imageSources[currentImageIndex];  // Use the current image source
+
+                    // Set image size to be the same as the clickable area (circle)
+                    const imageSize = clickableRegion.diameter;
+
+                    image.onload = () => {
+                        // Remove fade effect by setting opacity to 1
+                        canvas.style.opacity = 1;
+                        video.style.opacity = 1;
+
+                        // Clear the canvas
+                        ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+                        // Draw the resized image at the center of the circle
+                        ctx.drawImage(image, clickableRegion.x - imageSize / 2, clickableRegion.y - imageSize / 2, imageSize, imageSize);
+                        imageInserted = true; // Set the flag to true after the image is inserted
+                        video.pause(); // Pause the video stream
+
+                        // Display the watch image and checkbox
+                        const watchImage = document.getElementById('watch-image');
+                        const likeCheckbox = document.getElementById('like-checkbox');
+
+                        watchImage.src = image.src;
+                        watchImage.style.display = 'block';
+                        likeCheckbox.style.display = 'block';
+                    };
+                }
+            });
+
+            // Handle click events on the "Next" button
+            document.getElementById('nextButton').addEventListener('click', () => {
+                // Increment the current image index
+                currentImageIndex = (currentImageIndex + 1) % imageSources.length;
+
+                // Reset flags and fade effect
+                imageInserted = false;
+                canvas.style.opacity = 0.3;
+
+                // Redraw the clickable circle
+                drawClickableCircle();
+
+                // Hide the watch image and checkbox
+                const watchImage = document.getElementById('watch-image');
+                const likeCheckbox = document.getElementById('like-checkbox');
+
+                watchImage.style.display = 'none';
+                likeCheckbox.style.display = 'none';
+            });
+
+            // Handle click events on the "Like" checkbox
+            document.getElementById('like-checkbox').addEventListener('change', () => {
+                const isChecked = document.getElementById('like-checkbox').checked;
+                if (isChecked) {
+                    // Redirect to another page (replace 'your_checkout_page.html' with the actual page URL)
+                    window.location.href = './cart.php';
+                }
+            });
+        });
+    </script>
+</body>
+</html>
